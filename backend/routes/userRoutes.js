@@ -102,14 +102,58 @@ userRouter.get("/logout", async (req, res) => {
 });
 
 // GET
-userRouter.get("/", async(req, res)=>{
+userRouter.get("/", auth, async (req, res) => {
   try {
     let users = await UserModel.find();
-    res.status(200).json(users);
+    res.status(200).json({ users: users });
   } catch (error) {
     res.status(400).send({ error: error });
   }
-})
+});
+
+//PATCH
+userRouter.patch("/update/:id", auth, async (req, res) => {
+  const { id } = req.params;
+  const { username, email, password, DOB, role, location, confirm_password } =
+    req.body;
+  try {
+    bcrypt.hash(password, +process.env.saltRounds, async (err, hash) => {
+      if (err) {
+        res.status(400).send({ error: err });
+      }
+      let user = {
+        username,
+        email,
+        password: hash,
+        DOB,
+        role,
+        location,
+        confirm_password: hash,
+      };
+      let updatedUser = await UserModel.findByIdAndUpdate({ _id: id }, user);
+      let getUsers = await UserModel.find();
+      res
+        .status(200)
+        .send({ msg: "User has been updated successfully", users: getUsers });
+    });
+  } catch (error) {
+    res.status(400).send({ error: error });
+  }
+});
+
+//DELETE
+userRouter.delete("/delete/:id", auth, async (req, res) => {
+  const { id } = req.params;
+  try {
+    let deletedUser = await UserModel.findByIdAndDelete({ _id: id });
+    let getUsers = await UserModel.find();
+    res
+      .status(200)
+      .send({ msg: "User has been updated successfully", users: getUsers });
+  } catch (error) {
+    res.status(400).send({ error: error });
+  }
+});
 
 module.exports = {
   userRouter,
